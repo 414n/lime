@@ -41,7 +41,16 @@ class AndroidPlatform extends PlatformTarget
 
 			if (deviceID == null && project.targetFlags.exists("device"))
 			{
-				deviceID = project.targetFlags.get("device") + ":5555";
+				var d:String = project.targetFlags.get("device");
+				Log.info('found device ${d} on command line');
+				if (AndroidHelper.listDevices().contains(d))
+				{
+					deviceID = d;
+				}else
+				{
+					deviceID = d.indexOf(":") != -1 ? d : '${d}:5555';
+				}
+				Log.info('deviceID =  ${deviceID}');
 			}
 		}
 
