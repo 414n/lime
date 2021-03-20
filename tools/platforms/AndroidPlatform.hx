@@ -24,6 +24,8 @@ class AndroidPlatform extends PlatformTarget
 {
 	private var deviceID:String;
 
+	private var helper:AndroidHelper;
+
 	public function new(command:String, _project:HXProject, targetFlags:Map<String, String>)
 	{
 		super(command, _project, targetFlags);
@@ -37,7 +39,7 @@ class AndroidPlatform extends PlatformTarget
 				Log.error("You need to run \"lime setup android\" before you can use the Android target");
 			}
 
-			AndroidHelper.initialize(project);
+			helper = new AndroidHelper(project);
 
 			if (deviceID == null && project.targetFlags.exists("device"))
 			{
@@ -171,7 +173,7 @@ class AndroidPlatform extends PlatformTarget
 
 		if (noOutput) return;
 
-		AndroidHelper.build(project, destination);
+		helper.build(project, destination);
 	}
 
 	public override function clean():Void
@@ -269,7 +271,7 @@ class AndroidPlatform extends PlatformTarget
 
 		var apkPath = Path.combine(outputDirectory, project.app.file + "-" + build + ".apk");
 
-		deviceID = AndroidHelper.install(project, apkPath, deviceID);
+		deviceID = helper.install(project, apkPath, deviceID);
 	}
 
 	public override function rebuild():Void
@@ -295,17 +297,17 @@ class AndroidPlatform extends PlatformTarget
 
 	public override function run():Void
 	{
-		AndroidHelper.run(project.meta.packageName + "/" + project.meta.packageName + ".MainActivity", deviceID);
+		helper.run(project.meta.packageName + "/" + project.meta.packageName + ".MainActivity", deviceID);
 	}
 
 	public override function trace():Void
 	{
-		AndroidHelper.trace(project, project.debug, deviceID);
+		helper.trace(project, project.debug, deviceID);
 	}
 
 	public override function uninstall():Void
 	{
-		AndroidHelper.uninstall(project.meta.packageName, deviceID);
+		helper.uninstall(project.meta.packageName, deviceID);
 	}
 
 	public override function update():Void
@@ -410,7 +412,7 @@ class AndroidPlatform extends PlatformTarget
 		}
 		else
 		{
-			context.ANDROID_BUILD_TOOLS_VERSION = AndroidHelper.getBuildToolsVersion(project);
+			context.ANDROID_BUILD_TOOLS_VERSION = helper.getBuildToolsVersion(project);
 		}
 
 		var escaped = ~/([ #!=\\:])/g;

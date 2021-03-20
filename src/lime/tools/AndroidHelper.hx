@@ -6,19 +6,67 @@ import sys.FileSystem;
 
 class AndroidHelper
 {
-	private static var adbName:String;
-	private static var adbPath:String;
-	private static var androidName:String;
-	private static var androidPath:String;
-	private static var emulatorName:String;
-	private static var emulatorPath:String;
+	private var adbName:String;
+	private var adbPath:String;
+	private var androidName:String;
+	private var androidPath:String;
+	private var emulatorName:String;
+	private var emulatorPath:String;
+	private var sdkPath:String;
 
-	public static function build(project:HXProject, projectDirectory:String):Void
+	public function new(project:HXProject)
 	{
-		if (project.environment.exists("ANDROID_SDK"))
+		checkProject(project);
+		adbPath = sdkPath + "/tools/";
+		androidPath = sdkPath + "/tools/";
+		emulatorPath = sdkPath + "/tools/";
+
+		adbName = "adb";
+		androidName = "android";
+		emulatorName = "emulator";
+
+		if (System.hostPlatform == WINDOWS)
 		{
-			Sys.putEnv("ANDROID_SDK", project.environment.get("ANDROID_SDK"));
+			adbName += ".exe";
+			androidName += ".bat";
+			emulatorName += ".exe";
 		}
+
+		if (!FileSystem.exists(adbPath + adbName))
+		{
+			adbPath = sdkPath + "/platform-tools/";
+		}
+
+		if (System.hostPlatform != WINDOWS)
+		{
+			adbName = "./" + adbName;
+			androidName = "./" + androidName;
+			emulatorName = "./" + emulatorName;
+		}
+
+		if (project.environment.exists("JAVA_HOME"))
+		{
+			Sys.putEnv("JAVA_HOME", project.environment.get("JAVA_HOME"));
+		}
+	}
+
+	private function checkProject(project:HXProject)
+	{
+		if (!project.environment.exists("ANDROID_SDK"))
+		{
+			Log.error("no ANDROID_SDK project variable set. Aborting!");
+		}
+		if (!FileSystem.exists(project.environment.get("ANDROID_SDK")))
+		{
+			Log.error('the ANDROID SDK PATH ${project.environment.get("ANDROID_SDK")} does not exist!');
+		}
+		sdkPath = project.environment.get("ANDROID_SDK");
+		Log.info('Using ANDROID_SDK = ${sdkPath}');
+	}
+
+	public function build(project:HXProject, projectDirectory:String):Void
+	{
+		Sys.putEnv("ANDROID_SDK", sdkPath);
 
 		var task = "assembleDebug";
 
@@ -52,7 +100,7 @@ class AndroidHelper
 		}
 	}
 
-	private static function connect(deviceID:String):Void
+	private function connect(deviceID:String):Void
 	{
 		if (deviceID != null && deviceID != "" && deviceID.indexOf("emulator") == -1)
 		{
@@ -65,9 +113,9 @@ class AndroidHelper
 		}
 	}
 
-	public static function getBuildToolsVersion(project:HXProject):String
+	public function getBuildToolsVersion(project:HXProject):String
 	{
-		var buildToolsPath = Path.combine(project.environment.get("ANDROID_SDK"), "build-tools/");
+		var buildToolsPath = Path.combine(sdkPath, "build-tools/");
 
 		var version = ~/^(\d+)\.(\d+)\.(\d+)$/i;
 		var current = {major: 0, minor: 0, micro: 0};
@@ -119,7 +167,7 @@ class AndroidHelper
 		return '${current.major}.${current.minor}.${current.micro}';
 	}
 
-	public static function getDeviceSDKVersion(deviceID:String):Int
+	public function getDeviceSDKVersion(deviceID:String):Int
 	{
 		var devices = listDevices();
 
@@ -157,42 +205,7 @@ class AndroidHelper
 		return 0;
 	}
 
-	public static function initialize(project:HXProject):Void
-	{
-		adbPath = project.environment.get("ANDROID_SDK") + "/tools/";
-		androidPath = project.environment.get("ANDROID_SDK") + "/tools/";
-		emulatorPath = project.environment.get("ANDROID_SDK") + "/tools/";
-
-		adbName = "adb";
-		androidName = "android";
-		emulatorName = "emulator";
-
-		if (System.hostPlatform == WINDOWS)
-		{
-			adbName += ".exe";
-			androidName += ".bat";
-			emulatorName += ".exe";
-		}
-
-		if (!FileSystem.exists(adbPath + adbName))
-		{
-			adbPath = project.environment.get("ANDROID_SDK") + "/platform-tools/";
-		}
-
-		if (System.hostPlatform != WINDOWS)
-		{
-			adbName = "./" + adbName;
-			androidName = "./" + androidName;
-			emulatorName = "./" + emulatorName;
-		}
-
-		if (project.environment.exists("JAVA_HOME"))
-		{
-			Sys.putEnv("JAVA_HOME", project.environment.get("JAVA_HOME"));
-		}
-	}
-
-	public static function install(project:HXProject, targetPath:String, deviceID:String = null):String
+	public function install(project:HXProject, targetPath:String, deviceID:String = null):String
 	{
 		if (project.targetFlags.exists("emulator") || project.targetFlags.exists("simulator"))
 		{
@@ -277,7 +290,7 @@ class AndroidHelper
 		return deviceID;
 	}
 
-	public static function listAVDs():Array<String>
+	public function listAVDs():Array<String>
 	{
 		var avds = new Array<String>();
 		var output = System.runProcess(androidPath, androidName, ["list", "avd"]);
@@ -296,7 +309,7 @@ class AndroidHelper
 		return avds;
 	}
 
-	public static function listDevices():Array<String>
+	public function listDevices():Array<String>
 	{
 		var devices = new Array<String>();
 		var output = "";
@@ -326,7 +339,7 @@ class AndroidHelper
 		return devices;
 	}
 
-	public static function run(activityName:String, deviceID:String = null):Void
+	public function run(activityName:String, deviceID:String = null):Void
 	{
 		var args = ["shell", "am", "start", "-a", "android.intent.action.MAIN", "-n", activityName];
 
@@ -341,7 +354,7 @@ class AndroidHelper
 		System.runCommand(adbPath, adbName, args);
 	}
 
-	public static function trace(project:HXProject, debug:Bool, deviceID:String = null, customFilter:String = null):Void
+	public function trace(project:HXProject, debug:Bool, deviceID:String = null, customFilter:String = null):Void
 	{
 		// Use -DFULL_LOGCAT or  <set name="FULL_LOGCAT" /> if you do not want to filter log messages
 
@@ -393,7 +406,7 @@ class AndroidHelper
 		}
 	}
 
-	public static function uninstall(packageName:String, deviceID:String = null):Void
+	public function uninstall(packageName:String, deviceID:String = null):Void
 	{
 		var args = ["uninstall", packageName];
 

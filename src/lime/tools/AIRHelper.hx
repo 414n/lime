@@ -203,14 +203,14 @@ class AIRHelper
 	{
 		if (targetPlatform == ANDROID)
 		{
-			AndroidHelper.initialize(project);
-			AndroidHelper.install(project,
+			var androidHelper = new AndroidHelper(project);
+			androidHelper.install(project,
 				FileSystem.fullPath(workingDirectory)
 				+ "/"
 				+ (rootDirectory != null ? rootDirectory + "/" : "")
 				+ project.app.file
 				+ ".apk");
-			AndroidHelper.run(project.meta.packageName + "/.AppEntry");
+			androidHelper.run(project.meta.packageName + "/.AppEntry");
 		}
 		else if (targetPlatform == IOS)
 		{
@@ -292,7 +292,7 @@ class AIRHelper
 	{
 		if (targetPlatform == ANDROID)
 		{
-			AndroidHelper.initialize(project);
+			var androidHelper = new AndroidHelper(project);
 			var deviceID = null;
 			var adbFilter = null;
 
@@ -309,7 +309,7 @@ class AIRHelper
 
 			// }
 
-			AndroidHelper.trace(project, project.debug, deviceID, adbFilter);
+			androidHelper.trace(project, project.debug, deviceID, adbFilter);
 		}
 	}
 
@@ -317,9 +317,9 @@ class AIRHelper
 	{
 		if (targetPlatform == ANDROID)
 		{
-			AndroidHelper.initialize(project);
+			var androidHelper = new AndroidHelper(project);
 			var deviceID = null;
-			AndroidHelper.uninstall(project.meta.packageName, deviceID);
+			androidHelper.uninstall(project.meta.packageName, deviceID);
 		}
 	}
 }
